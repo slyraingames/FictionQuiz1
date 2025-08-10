@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module 1 Quiz: Foundations of Fiction Writing</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Using a common font for better aesthetics */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        /* Custom styles for the quiz options to provide clear feedback */
+        .option.selected {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            border-color: #2563eb; /* blue-600 */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .option.correct {
+            background-color: #16a34a; /* green-600 */
+            color: white;
+            border-color: #15803d; /* green-700 */
+        }
+        .option.incorrect {
+            background-color: #dc2626; /* red-600 */
+            color: white;
+            border-color: #b91c1c; /* red-700 */
+        }
+        .option:not(.disabled):hover {
+            background-color: #f3f4f6; /* gray-100 */
+            border-color: #9ca3af; /* gray-400 */
+        }
+        .option.disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        /* A subtle transition for a smoother experience */
+        .option {
+            transition: all 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 flex items-center justify-center min-h-screen py-12 px-4">
+
+    <div id="quiz-container" class="bg-white w-full max-w-2xl mx-auto p-6 sm:p-8 rounded-xl shadow-lg">
+        <h1 class="text-3xl font-bold text-center mb-2">Module 1 Quiz</h1>
+        <h2 class="text-xl font-semibold text-center text-slate-600 mb-8">Foundations of Fiction Writing</h2>
+        
+        <div id="quiz-content" class="space-y-8">
+            <!-- Questions will be dynamically inserted here by JavaScript -->
+        </div>
+
+        <button id="submit-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg mt-10 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition duration-300 ease-in-out text-lg shadow-md hover:shadow-lg">
+            Submit Answers
+        </button>
+
+        <div id="results-container" class="hidden mt-8 text-center p-6 bg-slate-50 rounded-lg border border-slate-200">
+            <h3 class="text-2xl font-bold">Quiz Complete!</h3>
+            <p id="score" class="text-4xl font-bold my-4 text-blue-600"></p>
+            <p id="feedback" class="text-lg text-slate-700"></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- QUIZ DATA ---
+            // Storing all quiz questions, options, and correct answers in a structured array.
+            const quizData = [
+                {
+                    question: "What is the main difference between a short story and a novel?",
+                    options: [
+                        { text: "A novel always has more than one protagonist" },
+                        { text: "A short story is typically under 7,500 words, while a novel is over 40,000 words", correct: true },
+                        { text: "Short stories can’t have subplots" },
+                        { text: "Novels must be written in third person" }
+                    ]
+                },
+                {
+                    question: "Which of the following is a subgenre of speculative fiction?",
+                    options: [
+                        { text: "Historical Romance" },
+                        { text: "Detective Noir" },
+                        { text: "Cyberpunk", correct: true },
+                        { text: "Satire" }
+                    ]
+                },
+                {
+                    question: "Which element of fiction primarily drives the plot forward?",
+                    options: [
+                        { text: "Theme" },
+                        { text: "Setting" },
+                        { text: "Conflict", correct: true },
+                        { text: "Style" }
+                    ]
+                },
+                {
+                    question: "True or False: Theme is the same as the moral of the story.",
+                    options: [
+                        { text: "True" },
+                        { text: "False", correct: true }
+                    ]
+                }
+            ];
+
+            // --- DOM Elements ---
+            // Getting references to the HTML elements we'll be interacting with.
+            const quizContent = document.getElementById('quiz-content');
+            const submitBtn = document.getElementById('submit-btn');
+            const resultsContainer = document.getElementById('results-container');
+            const scoreEl = document.getElementById('score');
+            const feedbackEl = document.getElementById('feedback');
+            
+            // --- RENDER THE QUIZ ---
+            // This function builds the HTML for the questions and options and injects it into the page.
+            function renderQuiz() {
+                let quizHTML = "";
+                quizData.forEach((q, questionIndex) => {
+                    quizHTML += `
+                        <div class="question-block">
+                            <p class="text-lg font-semibold mb-4">${questionIndex + 1}. ${q.question}</p>
+                            <div class="options-container space-y-3" data-question-index="${questionIndex}">
+                                ${renderOptions(q.options, questionIndex)}
+                            </div>
+                        </div>
+                    `;
+                });
+                quizContent.innerHTML = quizHTML;
+            }
+
+            // Helper function to render the options for a single question.
+            function renderOptions(options, questionIndex) {
+                let optionsHTML = "";
+                options.forEach((option, optionIndex) => {
+                    optionsHTML += `
+                        <button class="option w-full text-left p-4 border-2 border-slate-300 rounded-lg" data-question-index="${questionIndex}" data-option-index="${optionIndex}">
+                            ${option.text}
+                        </button>
+                    `;
+                });
+                return optionsHTML;
+            }
+
+            // --- HANDLE OPTION SELECTION ---
+            // An event listener on the main content area handles clicks on any option button.
+            quizContent.addEventListener('click', (e) => {
+                // We only care about clicks on an option button that isn't already disabled.
+                if (e.target.classList.contains('option') && !e.target.classList.contains('disabled')) {
+                    const questionIndex = e.target.dataset.questionIndex;
+                    
+                    // First, deselect any other option in the same question group.
+                    const allOptionsInGroup = document.querySelectorAll(`.option[data-question-index="${questionIndex}"]`);
+                    allOptionsInGroup.forEach(opt => opt.classList.remove('selected'));
+                    
+                    // Then, add the 'selected' class to the clicked option.
+                    e.target.classList.add('selected');
+                }
+            });
+
+            // --- HANDLE SUBMISSION ---
+            // This function runs when the "Submit Answers" button is clicked.
+            submitBtn.addEventListener('click', () => {
+                let score = 0;
+                const allOptions = document.querySelectorAll('.option');
+
+                // Loop through each question to check the answer.
+                quizData.forEach((q, questionIndex) => {
+                    const selectedOptionEl = document.querySelector(`.option.selected[data-question-index="${questionIndex}"]`);
+                    
+                    if (selectedOptionEl) {
+                        const optionIndex = parseInt(selectedOptionEl.dataset.optionIndex);
+                        // If the selected option is correct, increment the score and style it green.
+                        if (q.options[optionIndex].correct) {
+                            score++;
+                            selectedOptionEl.classList.add('correct');
+                        } else {
+                            // If incorrect, style it red.
+                            selectedOptionEl.classList.add('incorrect');
+                            // Also find and highlight the correct answer in green for learning.
+                            const correctIndex = q.options.findIndex(opt => opt.correct);
+                            const correctOptionEl = document.querySelector(`.option[data-question-index="${questionIndex}"][data-option-index="${correctIndex}"]`);
+                            correctOptionEl.classList.add('correct');
+                        }
+                    } else {
+                        // If no answer was selected, just highlight the correct one so the user learns.
+                         const correctIndex = q.options.findIndex(opt => opt.correct);
+                         const correctOptionEl = document.querySelector(`.option[data-question-index="${questionIndex}"][data-option-index="${correctIndex}"]`);
+                         correctOptionEl.classList.add('correct');
+                         correctOptionEl.classList.add('selected'); // Adds a border to make it stand out
+                    }
+                });
+
+                // Disable all options to prevent changing answers after submission.
+                allOptions.forEach(opt => opt.classList.add('disabled'));
+
+                // Display the final results.
+                scoreEl.textContent = `${score} / ${quizData.length}`;
+                feedbackEl.textContent = getFeedbackMessage(score, quizData.length);
+                resultsContainer.classList.remove('hidden');
+                submitBtn.style.display = 'none'; // Hide the submit button.
+
+                // Scroll the results into view for a better user experience.
+                resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+
+            // Provides a feedback message based on the user's score.
+            function getFeedbackMessage(score, total) {
+                const percentage = (score / total) * 100;
+                if (percentage === 100) return "Perfect score! You've mastered the foundations.";
+                if (percentage >= 75) return "Great job! You have a strong grasp of the basics.";
+                if (percentage >= 50) return "Good effort! A quick review of the module might be helpful.";
+                return "No worries! Review the module and try again to solidify your knowledge.";
+            }
+
+            // --- INITIALIZE THE QUIZ ---
+            // This starts the process by rendering the quiz on page load.
+            renderQuiz();
+        });
+    </script>
+
+</body>
+</html>
